@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: joyfulvibe
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Migrate
+        env:
+          SQLALCHEMY_DATABASE_URI: postgresql+psycopg://postgres:postgres@localhost:5432/joyfulvibe
+        run: |
+          cd backend
+          alembic upgrade head
+      - name: Tests
+        env:
+          SQLALCHEMY_DATABASE_URI: postgresql+psycopg://postgres:postgres@localhost:5432/joyfulvibe
+        run: |
+          cd backend
+          pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        run: |
+          cd frontend
+          npm ci || npm i
+      - name: Lint
+        run: |
+          cd frontend
+          npm run lint
+      - name: Test
+        run: |
+          cd frontend
+          npm test -- --ci --passWithNoTests
+      - name: Build
+        run: |
+          cd frontend
+          npm run build

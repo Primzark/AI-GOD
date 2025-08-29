@@ -1,0 +1,38 @@
+# Node
+node_modules
+.pnpm-store
+.yarn
+dist
+build
+
+# Python
+__pycache__
+.pytest_cache
+.venv
+env/
+venv/
+
+# OS / Editor
+.DS_Store
+.idea
+.vscode
+
+# Env
+.env
+**/.env
+
+# Generated
+coverage
+coverage.xml
+reports/
+frontend/coverage
+backend/htmlcov
+alembic.ini
+**/.cache
+
+# Docker
+*.pid
+*.log
+db-data
+pg-data
+**/.mypy_cache
