@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserLogin, Token, UserOut
@@ -11,12 +11,12 @@ from app.core.security import create_access_token, create_refresh_token
 from app.core.config import settings
 
 router = APIRouter()
-from app.main import limiter
+from app.core.limiter import limiter
 
 
 @router.post("/register", response_model=UserOut)
 @limiter.limit(settings.RATE_LIMIT_AUTH)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+def register(request: Request, user_in: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user_in.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -34,7 +34,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 @limiter.limit(settings.RATE_LIMIT_AUTH)
-def login(data: UserLogin, db: Session = Depends(get_db)):
+def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -52,7 +52,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 @router.post("/token", response_model=Token, include_in_schema=False)
 @limiter.limit(settings.RATE_LIMIT_AUTH)
-def login_via_oauth(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_via_oauth(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     return login(UserLogin(email=form_data.username, password=form_data.password), db)
 
 
