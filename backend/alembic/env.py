@@ -15,7 +15,11 @@ fileConfig(config.config_file_name)  # type: ignore[arg-type]
 from app.db.base import Base  # noqa: F401
 
 def get_url() -> str:
-    return os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/joyfulvibe")
+    return (
+        os.getenv("DATABASE_URL")
+        or os.getenv("SQLALCHEMY_DATABASE_URI")
+        or "postgresql+psycopg://postgres:postgres@localhost:5432/joyfulvibe"
+    )
 
 def run_migrations_offline():
     url = get_url()
@@ -40,4 +44,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
